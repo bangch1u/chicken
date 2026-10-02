@@ -21,9 +21,6 @@ export function validateConfig(value: unknown): WheelConfig {
     winnerName: config.winnerName.trim(),
     names: config.names.map(name => name.trim()),
   };
-  if (result.names.length && !result.names.some(name => normalizeName(name) === normalizeName(result.winnerName))) {
-    throw new Error("winnerName phải có trong danh sách names của wheel-config.json.");
-  }
   return result;
 }
 
@@ -44,11 +41,7 @@ export function pickWinner(names: string[], turn: number, config: WheelConfig): 
     const index = names.findIndex(
       (name) => normalizeName(name) === normalizeName(config.winnerName),
     );
-    if (index < 0)
-      throw new Error(
-        `Thêm ${config.winnerName} vào danh sách để thực hiện lượt quay thứ ${config.scheduledTurn}.`,
-      );
-    return index;
+    if (index >= 0) return index;
   }
   const limit = Math.floor(0x100000000 / names.length) * names.length;
   let value: number;

@@ -28,10 +28,10 @@ test("the pointer lands within every selected segment over consecutive rotations
     }
   }
 });
-test("invalid lists and missing scheduled winner are blocked", () => {
+test("invalid lists are blocked and a missing scheduled winner falls back to random", () => {
   assert.throws(() => pickWinner([], 1, config));
   assert.throws(() => pickWinner(Array(401).fill("A"), 1, config));
-  assert.throws(() => pickWinner(["A"], 6, config));
+  assert.equal(pickWinner(["A"], 6, config), 0);
   assert.equal(pickWinner(["A"], 5, config), 0);
   assert.equal(pickWinner(["A"], 7, config), 0);
   assert.deepEqual(parseNames(" A\r\n\n B "), ["A", "B"]);
@@ -42,13 +42,20 @@ test('configuration changes select the new name and isolate stored sessions', ()
  assert.equal(pickWinner(changed.names, 3, changed), 1);
  assert.notEqual(configStorageKey(config), configStorageKey(changed));
  assert.equal(configStorageKey(config), configStorageKey(validateConfig({...config})));
- assert.throws(() => pickWinner(['144 Nguyễn Văn Khoa', 'Nguyễn Văn Khoa', 'Khoa Anthony'], 6, config));
+
  assert.equal(pickWinner(['145  Nguyễn Văn Khoa'.normalize('NFD')], 6, config), 0);
 });
 test('invalid configuration is rejected', () => {
- for (const value of [null, {}, {...config,scheduledTurn:0}, {...config,scheduledTurn:1.5}, {...config,winnerName:'Missing',names:['Other']},  {...config,names:Array(401).fill(config.winnerName)}, {...config,names:[123]}, {...config,winnerName:'A\nB',names:['A\nB']}]) {
+ for (const value of [null, {}, {...config,scheduledTurn:0}, {...config,scheduledTurn:1.5},   {...config,names:Array(401).fill(config.winnerName)}, {...config,names:[123]}, {...config,winnerName:'A\nB',names:['A\nB']}]) {
   assert.throws(() => validateConfig(value));
  }
 });
 
 test("an empty configured list allows entering participants in the UI", () => { assert.deepEqual(validateConfig({...config, names: []}).names, []); });
+
+test('missing configured winner uses the random path at the scheduled turn', (t) => {
+ const changed = validateConfig({...config, names: ['A', 'B', 'C']});
+ const random = t.mock.method(globalThis.crypto, 'getRandomValues', buffer => { buffer[0] = 2; return buffer; });
+ assert.equal(pickWinner(changed.names, changed.scheduledTurn, changed), 2);
+ assert.equal(random.mock.callCount(), 1);
+});
