@@ -1,6 +1,6 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 @theme {
-  --font-sans: Arial, Helvetica, sans-serif;
+  --font-sans: var(--font-be-vietnam-pro), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 :root {
   --purple: #7054dd;
@@ -13,10 +13,8 @@ body {
   margin: 0;
   background: #f8f7fc;
   color: var(--ink);
-  font:
-    14px Arial,
-    Helvetica,
-    sans-serif;
+  font-family: var(--font-be-vietnam-pro), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
 }
 button {
   font: inherit;
@@ -309,9 +307,9 @@ textarea {
   background: #fdfcfe;
   border-radius: 9px;
   color: #695777;
-  font:
-    13px/2.2 Arial,
-    sans-serif;
+  font-family: var(--font-be-vietnam-pro), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 13px;
+  line-height: 2.2;
   resize: vertical;
   outline-color: #af95e8;
 }
