@@ -16,7 +16,7 @@ Production: `npm run build`, sau đó `npm start`.
 - Dán tối đa 400 tên, mỗi dòng một người, hoặc nhập tệp TXT UTF-8.
 - Danh sách ban đầu lấy từ file cấu hình. Mục **Kịch bản sự kiện** có nút tạo 400 tên mẫu; thay bằng danh sách thật trước sự kiện.
 - Nhấn **Quay ngay** hoặc tâm vòng quay. Kết quả xuất hiện sau khoảng 6 giây.
-- **Lượt thứ 6 được chỉ định cho 145 Nguyễn Văn Khoa** (không phân biệt hoa thường). Nếu thiếu tên, lượt 6 vẫn quay ngẫu nhiên bình thường. Các lượt khác chọn ngẫu nhiên và có thể trúng lại tên này.
+- **Lượt thứ 6 được chỉ định cho 145 Nguyễn Văn Khoa** (không phân biệt hoa thường). Nếu thiếu tên, lượt 6 vẫn quay ngẫu nhiên bình thường. Các lượt trước lượt chỉ định chọn ngẫu nhiên và loại toàn bộ dòng khớp tên được chỉ định. Các lượt sau đó chọn ngẫu nhiên từ toàn bộ danh sách. Nếu chỉ còn người được chỉ định ở lượt trước, cần thêm người khác để quay.
 - Có thể giữ hoặc xóa người trúng khỏi danh sách. Các dòng trùng tên được tính như các mục riêng.
 - Danh sách và lịch sử được lưu trên trình duyệt hiện tại. Tải lại trang giữ bộ đếm; **Bắt đầu phiên mới** xóa lịch sử và đưa về lượt 1.
 - Nếu tải lại khi đang quay, lượt chưa hoàn thành chưa được tính. Dữ liệu không đồng bộ giữa thiết bị hoặc tab.
@@ -49,3 +49,7 @@ node --experimental-strip-types --test tests/wheel.test.mjs
 npx eslint src/app/page.tsx src/app/layout.tsx src/lib/wheel.ts
 npm run build
 ```
+
+## Phiên bản giao diện
+
+Cuối trang hiển thị phiên bản lấy từ `package.json`. Trước bản phát hành tiếp theo, chạy `npm version patch --no-git-tag-version`, rồi build/deploy để cập nhật số phiên bản hiển thị.

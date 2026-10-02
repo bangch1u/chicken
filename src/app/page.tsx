@@ -2,6 +2,7 @@
 /* Browser persistence is synchronized after hydration; storage failures update the notice. */
 /* eslint-disable react-hooks/set-state-in-effect */
 import Link from "next/link";
+import { version } from "../../package.json";
 import { useEffect, useRef, useState } from "react";
 import {
   Shuffle,
@@ -411,6 +412,7 @@ export default function Home() {
           )}
         </div>
         <footer>
+          <span title="Phiên bản ứng dụng đang hiển thị">Phiên bản v{version}</span>
           <span>
             <Sparkles size={15} />
             Một chút hồi hộp. Một niềm vui lớn.

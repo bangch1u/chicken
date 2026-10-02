@@ -43,12 +43,18 @@ export function pickWinner(names: string[], turn: number, config: WheelConfig): 
     );
     if (index >= 0) return index;
   }
-  const limit = Math.floor(0x100000000 / names.length) * names.length;
+  const candidates = names
+    .map((name, index) => ({ name, index }))
+    .filter(({ name }) => turn >= config.scheduledTurn || normalizeName(name) !== normalizeName(config.winnerName));
+  if (!candidates.length) {
+    throw new Error("Hãy thêm người tham gia khác để quay các lượt trước lượt được chỉ định.");
+  }
+  const limit = Math.floor(0x100000000 / candidates.length) * candidates.length;
   let value: number;
   do {
     value = crypto.getRandomValues(new Uint32Array(1))[0];
   } while (value >= limit);
-  return value % names.length;
+  return candidates[value % candidates.length].index;
 }
 export function targetRotation(
   current: number,

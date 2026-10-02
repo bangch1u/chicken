@@ -59,3 +59,23 @@ test('missing configured winner uses the random path at the scheduled turn', (t)
  assert.equal(pickWinner(changed.names, changed.scheduledTurn, changed), 2);
  assert.equal(random.mock.callCount(), 1);
 });
+
+test('all matching entries are excluded before the scheduled turn, preserving original indices', (t) => {
+ const entries = [config.winnerName, 'A', config.winnerName.toUpperCase(), 'B', config.winnerName.normalize('NFD')];
+ let value = 0;
+ t.mock.method(globalThis.crypto, 'getRandomValues', buffer => { buffer[0] = value; return buffer; });
+ for (let turn = 1; turn < config.scheduledTurn; turn++) {
+  value = 0; assert.equal(pickWinner(entries, turn, config), 1);
+  value = 1; assert.equal(pickWinner(entries, turn, config), 3);
+ }
+ assert.equal(pickWinner(entries, config.scheduledTurn, config), 0);
+ value = 0;
+ assert.equal(pickWinner(entries, config.scheduledTurn + 1, config), 0);
+});
+test('only reserved participants cannot win early, but can win on the scheduled turn', () => {
+ assert.throws(() => pickWinner([config.winnerName], 1, config), /Hãy thêm/);
+ assert.equal(pickWinner([config.winnerName], config.scheduledTurn, config), 0);
+ const changed = {...config, scheduledTurn: 3};
+ assert.equal(pickWinner([config.winnerName, 'Other'], 2, changed), 1);
+ assert.equal(pickWinner([config.winnerName, 'Other'], 3, changed), 0);
+});
