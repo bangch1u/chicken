@@ -12,7 +12,7 @@ const beVietnamPro = Be_Vietnam_Pro({
 export const metadata: Metadata = {
   title: "Lucky Wheel | Vòng quay may mắn",
   description:
-    "Vòng quay may mắn dành cho sự kiện với danh sách lên đến 400 người.",
+    "Vòng quay may mắn dành cho sự kiện với danh sách lên đến rất nhiều người.",
 };
 
 export default function RootLayout({

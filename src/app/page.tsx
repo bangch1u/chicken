@@ -254,10 +254,7 @@ export default function Home() {
               Thêm những cái tên. Quay một vòng. Đón điều bất ngờ.
             </p>
           </div>
-          <span className="badge">
-            <Users size={16} />
-            Lên đến 400 người
-          </span>
+        
         </div>
         <div className="workspace">
           <section className="wheel-panel">
