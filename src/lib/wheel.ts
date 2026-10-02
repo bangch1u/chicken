@@ -1,33 +1,52 @@
-﻿export const defaults = [
-  "Minh Anh",
-  "Hoàng Nam",
-  "Ngọc Linh",
-  "Tuấn Kiệt",
-  "Thảo Nhi",
-  "Khoa Anthony",
-  "Gia Hân",
-  "Đức Huy",
-  "Bảo Ngọc",
-  "Quang Minh",
-  "Hà My",
-  "Phương Anh",
-];
+export type WheelConfig = {
+  scheduledTurn: number;
+  winnerName: string;
+  names: string[];
+};
+
+function normalizeName(name: string): string {
+  return name.normalize("NFC").trim().replace(/\s+/g, " ").toLocaleLowerCase("vi");
+}
+
+export function validateConfig(value: unknown): WheelConfig {
+  const config = value as Partial<WheelConfig> | null;
+  if (!config || !Number.isSafeInteger(config.scheduledTurn) || (config.scheduledTurn ?? 0) < 1 ||
+      typeof config.winnerName !== "string" || !config.winnerName.trim() || /[\r\n]/.test(config.winnerName) ||
+      !Array.isArray(config.names) || config.names.length > 400 ||
+      !config.names.every(name => typeof name === "string" && name.trim() && !/[\r\n]/.test(name))) {
+    throw new Error("wheel-config.json không hợp lệ: cần scheduledTurn > 0, winnerName và tối đa 400 tên trong names.");
+  }
+  const result = {
+    scheduledTurn: config.scheduledTurn!,
+    winnerName: config.winnerName.trim(),
+    names: config.names.map(name => name.trim()),
+  };
+  if (result.names.length && !result.names.some(name => normalizeName(name) === normalizeName(result.winnerName))) {
+    throw new Error("winnerName phải có trong danh sách names của wheel-config.json.");
+  }
+  return result;
+}
+
+export function configStorageKey(config: WheelConfig): string {
+  return 'lucky-wheel-v2:' + JSON.stringify(config);
+}
+
 export function parseNames(text: string): string[] {
   return text
     .split(/\r?\n/)
     .map((name) => name.trim())
     .filter(Boolean);
 }
-export function pickWinner(names: string[], turn: number): number {
+export function pickWinner(names: string[], turn: number, config: WheelConfig): number {
   if (!names.length || names.length > 400)
     throw new Error("Danh sách phải có từ 1 đến 400 người.");
-  if (turn === 6) {
+  if (turn === config.scheduledTurn) {
     const index = names.findIndex(
-      (name) => name.toLocaleLowerCase() === "khoa anthony",
+      (name) => normalizeName(name) === normalizeName(config.winnerName),
     );
     if (index < 0)
       throw new Error(
-        "Thêm Khoa Anthony vào danh sách để thực hiện lượt quay thứ 6.",
+        `Thêm ${config.winnerName} vào danh sách để thực hiện lượt quay thứ ${config.scheduledTurn}.`,
       );
     return index;
   }

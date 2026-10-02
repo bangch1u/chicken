@@ -14,7 +14,7 @@ import {
   Maximize,
   X,
 } from "lucide-react";
-import { defaults, parseNames, pickWinner, targetRotation } from "@/lib/wheel";
+import { configStorageKey, validateConfig, type WheelConfig, parseNames, pickWinner, targetRotation } from "@/lib/wheel";
 
 const colors = [
   "#7055da",
@@ -28,7 +28,8 @@ const colors = [
 type Result = { name: string; turn: number };
 
 export default function Home() {
-  const [text, setText] = useState(defaults.join("\n"));
+  const [text, setText] = useState("");
+  const [config, setConfig] = useState<WheelConfig | null>(null);
   const [results, setResults] = useState<Result[]>([]);
   const [tab, setTab] = useState("names");
   const [busy, setBusy] = useState(false);
@@ -57,44 +58,46 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    try {
-      const saved = JSON.parse(
-        localStorage.getItem("lucky-wheel-v1") || "null",
-      );
-      if (
-        saved &&
-        typeof saved.text === "string" &&
-        Array.isArray(saved.results) &&
-        saved.results.every(
-          (r: Result, i: number) =>
-            r && typeof r.name === "string" && r.turn === i + 1,
-        )
-      ) {
-        setText(saved.text);
-        setResults(saved.results);
+    const controller = new AbortController();
+    async function load() {
+      try {
+        const response = await fetch('/wheel-config.json', { cache: 'no-store', signal: controller.signal });
+        if (!response.ok) throw new Error('Không thể tải wheel-config.json.');
+        const loaded = validateConfig(await response.json());
+        if (controller.signal.aborted) return;
+        setConfig(loaded);
+        setText(loaded.names.join('\n'));
+        try {
+          const saved = JSON.parse(localStorage.getItem(configStorageKey(loaded)) || 'null');
+          if (saved && typeof saved.text === 'string' && Array.isArray(saved.results) &&
+              saved.results.every((r: Result, i: number) => r && typeof r.name === 'string' && r.turn === i + 1)) {
+            setText(saved.text);
+            setResults(saved.results);
+          }
+        } catch {
+          setNotice('Không thể đọc dữ liệu đã lưu. Đã dùng danh sách trong file cấu hình.');
+        }
+        setReady(true);
+      } catch (error) {
+        if (!controller.signal.aborted) setNotice('Không thể nạp cấu hình. ' + (error as Error).message + ' Hãy sửa file rồi tải lại trang.');
       }
-    } catch {
-      setNotice("Không thể đọc dữ liệu đã lưu.");
     }
-    setReady(true);
+    void load();
     return () => {
+      controller.abort();
       if (timer.current) clearTimeout(timer.current);
     };
   }, []);
 
   useEffect(() => {
-    if (ready)
+    if (ready && config) {
       try {
-        localStorage.setItem(
-          "lucky-wheel-v1",
-          JSON.stringify({ text, results }),
-        );
+        localStorage.setItem(configStorageKey(config), JSON.stringify({ text, results }));
       } catch {
-        setNotice(
-          "Không thể tự động lưu. Hãy tải danh sách để giữ lại dữ liệu.",
-        );
+        setNotice('Không thể tự động lưu. Hãy tải danh sách để giữ lại dữ liệu.');
       }
-  }, [text, results, ready]);
+    }
+  }, [text, results, ready, config]);
 
   useEffect(() => {
     if (winner) close.current?.focus();
@@ -106,6 +109,13 @@ export default function Home() {
     const entries = parseNames(text).slice(0, 400),
       count = entries.length || 1,
       step = (Math.PI * 2) / count;
+    const baseFontSize = Math.max(
+      10,
+      Math.min(52, Math.round(((2 * Math.PI * 340) / count) * 0.54)),
+    );
+    const fontStack =
+      '"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+
     ctx.clearRect(0, 0, 1000, 1000);
     for (let i = 0; i < count; i++) {
       const start = i * step - Math.PI / 2;
@@ -125,19 +135,35 @@ export default function Home() {
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
         ctx.fillStyle = "white";
-        ctx.font = `600 ${Math.max(5, Math.min(26, 1900 / count))}px var(--font-be-vietnam-pro), "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif`;
-        ctx.fillText(entries[i], 460, 0, 340);
+        ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 1;
+
+        let itemFontSize = baseFontSize;
+        ctx.font = `bold ${itemFontSize}px ${fontStack}`;
+        const measured = ctx.measureText(entries[i]).width;
+        const maxRadialLength = 360;
+        if (measured > maxRadialLength) {
+          itemFontSize = Math.max(
+            14,
+            Math.floor(itemFontSize * (maxRadialLength / measured)),
+          );
+          ctx.font = `bold ${itemFontSize}px ${fontStack}`;
+        }
+
+        ctx.fillText(entries[i], 470, 0, maxRadialLength);
         ctx.restore();
       }
     }
   }, [text, fontLoaded]);
 
   function spin() {
-    if (lock.current || !ready || !valid || winner) return;
+    if (lock.current || !ready || !valid || winner || !config) return;
     const turn = results.length + 1;
     let index: number;
     try {
-      index = pickWinner(names, turn);
+      index = pickWinner(names, turn, config);
     } catch (error) {
       setNotice((error as Error).message);
       return;
@@ -196,7 +222,7 @@ export default function Home() {
           </div>
         </Link>
         <nav>
-          <button disabled={busy} onClick={() => input.current?.click()}>
+          <button disabled={busy || !ready} onClick={() => input.current?.click()}>
             <Upload size={16} />
             Nhập danh sách
           </button>
@@ -320,7 +346,7 @@ export default function Home() {
                     A–Z Sắp xếp
                   </button>
                   <button
-                    disabled={busy}
+                    disabled={busy || !ready}
                     onClick={() => input.current?.click()}
                   >
                     <Upload size={14} />
@@ -329,7 +355,7 @@ export default function Home() {
                 </div>
                 <textarea
                   aria-label="Danh sách người tham gia"
-                  disabled={busy}
+                  disabled={busy || !ready}
                   spellCheck={false}
                   value={text}
                   onChange={(e) => setText(e.target.value)}
@@ -393,7 +419,7 @@ export default function Home() {
             Một chút hồi hộp. Một niềm vui lớn.
           </span>
           <button
-            disabled={busy}
+            disabled={busy || !ready}
             onClick={() => {
               if (
                 confirm(
@@ -413,7 +439,7 @@ export default function Home() {
         <details>
        
           <button
-            disabled={busy}
+            disabled={busy || !ready}
             onClick={() => {
               if (
                 confirm("Thay danh sách hiện tại bằng 400 tên mẫu?")
@@ -421,7 +447,7 @@ export default function Home() {
                 setText(
                   Array.from({ length: 400 }, (_, i) =>
                     i === 5
-                      ? "Khoa Anthony"
+                      ? (config?.winnerName ?? "")
                       : `Người tham gia ${String(i + 1).padStart(3, "0")}`,
                   ).join("\n"),
                 );

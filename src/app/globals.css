@@ -301,15 +301,15 @@ h2 {
 textarea {
   flex: 1;
   margin: 0 22px;
-  padding: 13px 15px;
+  padding: 14px 16px;
   min-height: 290px;
   border: 1px solid #e9e2f0;
   background: #fdfcfe;
   border-radius: 9px;
-  color: #695777;
+  color: #554466;
   font-family: var(--font-be-vietnam-pro), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-size: 13px;
-  line-height: 2.2;
+  font-size: 15px;
+  line-height: 2;
   resize: vertical;
   outline-color: #af95e8;
 }
@@ -393,6 +393,7 @@ details button {
 .result strong {
   flex: 1;
   overflow-wrap: anywhere;
+  font-size: 15px;
 }
 .result span {
   color: #b39cbe;
